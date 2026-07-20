@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAMP | Video Archive Mosaic Player</title>
+    <!-- Sleek Modern Typefaces -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Deeper, subtly shaded obsidian-purple palette */
+            --bg-base: #030105;
+            --glow-bottom-left: rgba(112, 26, 117, 0.28);  /* Deep muted electric violet */
+            --glow-top-right: rgba(30, 27, 75, 0.35);      /* Muted midnight indigo */
+            --card-bg: rgba(10, 5, 14, 0.85);
+            --card-border: rgba(255, 255, 255, 0.07);
+            
+            /* Neon Spectrum */
+            --neon-pink: #f43f5e;
+            --neon-orange: #fb923c;
+            --neon-yellow: #facc15;
+            --neon-green: #a3e635;
+            --neon-cyan: #22d3ee;
+            --neon-purple: #c054ff;
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Modern Typographic Hierarchy */
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            /* Darker, subtle ambient gradient overlay */
+            background-image: 
+                radial-gradient(circle at 10% 90%, var(--glow-bottom-left) 0%, transparent 60%),
+                radial-gradient(circle at 90% 10%, rgba(192, 84, 255, 0.12) 0%, transparent 55%),
+                radial-gradient(circle at 50% 50%, var(--glow-top-right) 0%, transparent 75%),
+                linear-gradient(180deg, #050208 0%, var(--bg-base) 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            padding: 3rem 1.25rem;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 680px;
+            width: 100%;
+        }
+
+        /* Header & Interactive Hero */
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .hero-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            margin-bottom: 1.25rem;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .hero-img {
+            width: 100%;
+            height: auto;
+            border-radius: 16px;
+            box-shadow: 
+                0 0 40px rgba(192, 84, 255, 0.25),
+                0 0 80px rgba(34, 211, 238, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            display: block;
+            object-fit: cover;
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Hero Hover Effects */
+        .hero-link:hover .hero-img {
+            transform: scale(1.02);
+            box-shadow: 
+                0 0 50px rgba(192, 84, 255, 0.5),
+                0 0 90px rgba(34, 211, 238, 0.3),
+                0 20px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Trailer Video Player */
+        .trailer-wrapper {
+            position: relative;
+            width: 100%;
+            margin-top: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(192, 84, 255, 0.18);
+            cursor: pointer;
+            background: #000;
+        }
+
+        .trailer-video {
+            width: 100%;
+            height: auto;
+            display: block;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+        }
+
+        /* Rotate video on portrait orientation during native fullscreen */
+        .trailer-wrapper:fullscreen,
+        .trailer-wrapper:-webkit-full-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100vw !important;
+            height: 100vh !important;
+            border-radius: 0;
+            border: none;
+            background: #000;
+        }
+
+        @media (orientation: portrait) {
+            .trailer-wrapper:fullscreen .trailer-video,
+            .trailer-wrapper:-webkit-full-screen .trailer-video {
+                transform: rotate(90deg);
+                width: 100vh;
+                height: 100vw;
+                object-fit: cover;
+            }
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 2.25rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+            position: relative;
+            overflow: hidden;
+            scroll-margin-top: 2rem; /* Offsets scroll target so it doesn't hit screen edge */
+        }
+
+        /* Top metallic glow border */
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
+        }
+
+        .glass-card.next-card::before {
+            background: linear-gradient(90deg, transparent, var(--neon-yellow), var(--neon-orange), transparent);
+        }
+
+        .glass-card.privacy-card::before {
+            background: linear-gradient(90deg, transparent, var(--neon-green), var(--neon-cyan), transparent);
+        }
+
+        .card-label {
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .features-card .card-label { color: var(--neon-cyan); }
+        .next-card .card-label { color: var(--neon-yellow); }
+        .faq-card .card-label { color: var(--neon-purple); }
+        .privacy-card .card-label { color: var(--neon-green); }
+
+        /* Custom Geometric SVG Bullets */
+        ul {
+            list-style: none;
+        }
+
+        li {
+            position: relative;
+            padding-left: 1.85rem;
+            margin-bottom: 0.95rem;
+            font-size: 0.95rem;
+            font-weight: 400;
+            color: #f1f5f9;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+        }
+
+        li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Glowing Chevron Bullets */
+        .bullet-icon {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .features-card .bullet-icon {
+            color: var(--neon-cyan);
+            filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.7));
+        }
+
+        .next-card .bullet-icon {
+            color: var(--neon-orange);
+            filter: drop-shadow(0 0 5px rgba(251, 146, 60, 0.7));
+        }
+
+        .privacy-card .bullet-icon {
+            color: var(--neon-green);
+            filter: drop-shadow(0 0 5px rgba(163, 230, 53, 0.7));
+        }
+
+        /* Standalone Uncontained Hero Logo */
+        .standalone-logo-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 3.5rem 0;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .vamp-standalone-logo {
+            width: 140px;
+            height: 140px;
+            border-radius: 24px;
+            object-fit: cover;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 
+                0 0 30px rgba(192, 84, 255, 0.4),
+                0 0 70px rgba(192, 84, 255, 0.2),
+                0 20px 40px rgba(0, 0, 0, 0.8);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Logo Hover Trigger State */
+        .standalone-logo-container:hover .vamp-standalone-logo {
+            transform: scale(1.06);
+            box-shadow: 
+                0 0 45px rgba(192, 84, 255, 0.6),
+                0 0 90px rgba(34, 211, 238, 0.35),
+                0 25px 50px rgba(0, 0, 0, 0.9);
+        }
+
+        /* FAQ Section */
+        .faq-item {
+            padding: 1.25rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .faq-item:first-of-type { padding-top: 0; }
+        .faq-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+        .faq-item h3 {
+            font-family: var(--font-heading);
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--neon-cyan);
+            margin-bottom: 0.35rem;
+            letter-spacing: -0.01em;
+        }
+
+        .faq-item p {
+            font-size: 0.92rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        .faq-item a {
+            color: var(--neon-cyan);
+            text-decoration: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .faq-item a:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        footer {
+            font-family: var(--font-heading);
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.25em;
+            padding-top: 1rem;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SVG Icon Symbol Template -->
+    <svg style="display: none;">
+        <symbol id="icon-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+        </symbol>
+    </svg>
+
+    <div class="container">
+        
+        <header>
+            <!-- Interactive Linked Hero Image -->
+            <a href="https://www.meta.com/en-gb/experiences/vamp/24618124374506403/" target="_blank" rel="noopener noreferrer" class="hero-link">
+                <img src="vamphero.jpg" alt="VAMP Hero Banner" class="hero-img">
+            </a>
+
+            <!-- Trailer Video Component -->
+            <div class="trailer-wrapper" id="trailerContainer">
+                <video id="trailerVideo" class="trailer-video" loop playsinline preload="metadata" muted>
+                    <source src="trailer.mp4" type="video/mp4">
+                    Your browser does not support HTML5 video.
+                </video>
+            </div>
+        </header>
+
+        <main>
+            <!-- Features Section -->
+            <section class="glass-card features-card">
+                <div class="card-label"><span>//</span> Features</div>
+                <ul>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Live mosaic wall, tile up to 200 videos (200 @ 540p, 50 @ 1080p)</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Hover to play instantly with seamless audio transitions</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Unlimited tabs per folder, self-organizing by design</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Original hand-attached UI</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Freeform screen and controller recentering</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Fast-access XR passthrough</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>180°, 360°, EAC and 3D (SBS, TTB) video support</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>2.0 / 5.1 / 7.1 surround sound with HRTF</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Custom C99 Vulkan engine optimized for Quest hardware</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Low battery draw (~3 hours playback)</li>
+                </ul>
+            </section>
+
+            <!-- What's Next Section -->
+            <section class="glass-card next-card">
+                <div class="card-label"><span>//</span> What's Next</div>
+                <ul>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Streamer for Windows, macOS, and Linux</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>USB OTG support for external drives</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Subtitles, bookmarks, and video looping</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Multi-wall spatial setup (up to 6 room walls)</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Images and background music playback</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Ambisonic spatial audio with custom speaker placement</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>Stream headset audio to PC speakers</li>
+                </ul>
+            </section>
+
+            <!-- Standalone Logo Component with Meta Store Link -->
+            <a href="https://www.meta.com/en-gb/experiences/vamp/24618124374506403/" target="_blank" rel="noopener noreferrer" class="standalone-logo-container">
+                <img src="vamplogo.jpg" alt="VAMP Logo" class="vamp-standalone-logo">
+            </a>
+
+            <!-- FAQ Section -->
+            <section class="glass-card faq-card" id="faq">
+                <div class="card-label"><span>//</span>FAQ</div>
+                
+                <div class="faq-item">
+                    <h3>Which VR hardware is supported?</h3>
+                    <p>Meta Quest 2, 3, and Pro for now. Support for other platforms will follow in future updates.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>What are the performance differences between headsets?</h3>
+                    <p>System RAM is the bottleneck. Quest 3 handles up to 200 concurrent 540p videos. Quest 2 plays ~2/3 of Quest 3's limit, while Quest Pro will eventually play 2x as many.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>Where do I put my video files?</h3>
+                    <p>Anywhere on local storage. Note that headset restart is currently required to index newly added files.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>When is full release?</h3>
+                    <p>Targeting launch prior to Meta Connect.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>Will VAMP support streaming protocols (SMB / DLNA)?</h3>
+                    <p>No, streaming will arrive later via a custom streamer.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>Where can I find controls?</h3>
+                    <p>Located at the bottom-right corner of the hand-attached UI overlay.</p>
+                </div>
+
+                <div class="faq-item">
+                    <h3>Have any other questions?</h3>
+                    <p>Reach out directly at <a href="mailto:vamp@vamp.video">vamp@vamp.video</a>.</p>
+                </div>
+            </section>
+
+            <!-- Line-by-Line Privacy Policy -->
+            <section class="glass-card privacy-card" id="privacy">
+                <div class="card-label"><span>//</span> Privacy Policy</div>
+                <ul>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>No user data collection, storage, or transmission.</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>All indexing and playback operate 100% locally on device.</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>No telemetry, no tracking, no external server pings.</li>
+                    <li><svg class="bullet-icon"><use href="#icon-chevron"/></svg>No online entitlement checks or license verification calls.</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer>
+            VAMP BY BAZED // C99 VULKAN VR ENGINE
+        </footer>
+
+    </div>
+
+    <script>
+        const video = document.getElementById('trailerVideo');
+        const container = document.getElementById('trailerContainer');
+
+        let fadeInterval = null;
+
+        function fadeVolume(targetVolume, durationMs, onComplete) {
+            clearInterval(fadeInterval);
+            
+            const startVolume = video.volume;
+            const stepTime = 20; // Update every 20ms
+            const steps = durationMs / stepTime;
+            const volumeStep = (targetVolume - startVolume) / steps;
+
+            let currentStep = 0;
+            fadeInterval = setInterval(() => {
+                currentStep++;
+                let newVol = video.volume + volumeStep;
+                
+                if (newVol > 1) newVol = 1;
+                if (newVol < 0) newVol = 0;
+                video.volume = newVol;
+
+                if (currentStep >= steps) {
+                    clearInterval(fadeInterval);
+                    video.volume = targetVolume;
+                    if (onComplete) onComplete();
+                }
+            }, stepTime);
+        }
+
+        // Hover: Play video silently (muted preview)
+        container.addEventListener('mouseenter', () => {
+            if (!document.fullscreenElement) {
+                video.play().catch(e => console.log('Autoplay blocked:', e));
+            }
+        });
+
+        // Mouse Leave (Dehover): Fade out volume over 500ms and pause
+        container.addEventListener('mouseleave', () => {
+            if (!document.fullscreenElement) {
+                fadeVolume(0.0, 500, () => {
+                    video.pause();
+                    video.muted = true; // Reset mute state
+                });
+            }
+        });
+
+        // Click: Fullscreen + Unmute + Fade volume IN over 500ms
+        container.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                video.muted = false;
+                video.volume = 0; // Start fade from zero
+                video.play();
+                fadeVolume(1.0, 500);
+
+                if (container.requestFullscreen) {
+                    container.requestFullscreen();
+                } else if (container.webkitRequestFullscreen) {
+                    container.webkitRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
